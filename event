@@ -1,8 +1,8 @@
 --========================================================--
---      TELEPORT A <-> B (Auto + Manual) - COMPACT UI    --
+--               TELEPORT A <-> B (COMPACT)              --
 --========================================================--
 
-local GUI_NAME = "ABTeleporterCompactUI"
+local GUI_NAME = "ABTeleporterUI"
 if game.CoreGui:FindFirstChild(GUI_NAME) then
     game.CoreGui:FindFirstChild(GUI_NAME):Destroy()
 end
@@ -10,185 +10,182 @@ end
 local player = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 
---========================================================--
---                        UI SETUP                        --
---========================================================--
-
+-- Frame Utama (lebih kecil)
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = GUI_NAME
 gui.ResetOnSpawn = false
 
--- Main frame (compact)
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 160)
-frame.Position = UDim2.new(0.5, -110, 0.5, -80)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 180, 0, 125)  -- <<< DIPERKECIL
+main.Position = UDim2.new(0.5, -90, 0.5, -62)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.BorderSizePixel = 0
 
-local uiCorner = Instance.new("UICorner", frame)
-uiCorner.CornerRadius = UDim.new(0, 10)
-
--- Draggable
+-- Drag
+local UIS = game:GetService("UserInputService")
 local dragging, dragStart, startPos
-frame.InputBegan:Connect(function(input)
+main.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
-        startPos = frame.Position
+        startPos = main.Position
     end
 end)
-frame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UIS.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
+        main.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
         )
     end
 end)
-
---========================================================--
---                   TITLE + MINIMIZE/EXIT                --
---========================================================--
-
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, -60, 0, 25)
-title.Position = UDim2.new(0, 5, 0, 0)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 14
-title.Text = "A <-> B Teleport"
-
-local closeBtn = Instance.new("TextButton", frame)
-closeBtn.Size = UDim2.new(0, 25, 0, 25)
-closeBtn.Position = UDim2.new(1, -30, 0, 0)
-closeBtn.Text = "X"
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-closeBtn.BackgroundTransparency = 1
-closeBtn.MouseButton1Click:Connect(function()
-    gui:Destroy()
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
 
-local minimizeBtn = Instance.new("TextButton", frame)
-minimizeBtn.Size = UDim2.new(0, 25, 0, 25)
-minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
-minimizeBtn.Text = "-"
-minimizeBtn.Font = Enum.Font.GothamBold
-minimizeBtn.TextColor3 = Color3.fromRGB(180, 180, 255)
-minimizeBtn.BackgroundTransparency = 1
+-- Title bar (lebih kecil)
+local title = Instance.new("Frame", main)
+title.Size = UDim2.new(1, 0, 0, 22)
+title.BackgroundColor3 = Color3.fromRGB(30,30,30)
+title.BorderSizePixel = 0
+
+local titleText = Instance.new("TextLabel", title)
+titleText.Size = UDim2.new(1, -40, 1, 0)
+titleText.Position = UDim2.new(0,5,0,0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "TP A <-> B"
+titleText.TextColor3 = Color3.fromRGB(255,255,255)
+titleText.TextSize = 14
+titleText.Font = Enum.Font.SourceSansBold
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- minimize dan close (lebih kecil)
+local close = Instance.new("TextButton", title)
+close.Size = UDim2.new(0,20,1,0)
+close.Position = UDim2.new(1,-20,0,0)
+close.BackgroundTransparency = 1
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255,100,100)
+close.TextSize = 14
+close.Font = Enum.Font.SourceSansBold
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+local mini = Instance.new("TextButton", title)
+mini.Size = UDim2.new(0,20,1,0)
+mini.Position = UDim2.new(1,-40,0,0)
+mini.BackgroundTransparency = 1
+mini.Text = "_"
+mini.TextColor3 = Color3.fromRGB(180,180,180)
+mini.TextSize = 16
+mini.Font = Enum.Font.SourceSansBold
 
 local minimized = false
-minimizeBtn.MouseButton1Click:Connect(function()
+mini.MouseButton1Click:Connect(function()
     minimized = not minimized
-    TweenService:Create(frame, TweenInfo.new(0.25), {
-        Size = minimized and UDim2.new(0, 220, 0, 35) or UDim2.new(0, 220, 0, 160)
+    TweenService:Create(main, TweenInfo.new(0.25), {
+        Size = minimized and UDim2.new(0,180,0,22) or UDim2.new(0,180,0,125)
     }):Play()
 end)
 
---========================================================--
---                     SAVE POS A & B                     --
---========================================================--
+-- Input waktu (diperkecil)
+local input = Instance.new("TextBox", main)
+input.Size = UDim2.new(1, -10, 0, 22)
+input.Position = UDim2.new(0, 5, 0, 28)
+input.BackgroundColor3 = Color3.fromRGB(40,40,40)
+input.TextColor3 = Color3.fromRGB(255,255,255)
+input.TextSize = 14
+input.Font = Enum.Font.SourceSans
+input.PlaceholderText = "Durasi (detik)"
+input.Text = ""
 
-local posA = nil
-local posB = nil
+-- Tombol start/stop (lebih kecil)
+local startBtn = Instance.new("TextButton", main)
+startBtn.Size = UDim2.new(1, -10, 0, 22)
+startBtn.Position = UDim2.new(0, 5, 0, 55)
+startBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+startBtn.TextColor3 = Color3.fromRGB(255,255,255)
+startBtn.TextSize = 14
+startBtn.Font = Enum.Font.SourceSansBold
+startBtn.Text = "Start"
 
-local function safeGetPos()
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        return player.Character.HumanoidRootPart.Position
-    end
-    return nil
+-- Tombol TP mode (lebih kecil)
+local tpBtn = Instance.new("TextButton", main)
+tpBtn.Size = UDim2.new(1, -10, 0, 22)
+tpBtn.Position = UDim2.new(0, 5, 0, 82)
+tpBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+tpBtn.TextColor3 = Color3.fromRGB(255,255,255)
+tpBtn.TextSize = 14
+tpBtn.Font = Enum.Font.SourceSansBold
+tpBtn.Text = "TP B (Manual)"
+
+-- Status kecil
+local status = Instance.new("TextLabel", main)
+status.Size = UDim2.new(1, -10, 0, 16)
+status.Position = UDim2.new(0, 5, 0, 106)
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.fromRGB(200,200,200)
+status.TextSize = 12
+status.Font = Enum.Font.SourceSans
+
+-- LOGIC
+local savedA, savedB
+local isRunning = false
+local goingToB = true
+local timerThread
+
+local function teleport(pos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = pos end
 end
-
---========================================================--
---                     UI BUTTON FACTORY                  --
---========================================================--
-
-local function createButton(text, y)
-    local btn = Instance.new("TextButton", frame)
-    btn.Size = UDim2.new(0, 200, 0, 30)
-    btn.Position = UDim2.new(0, 10, 0, y)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Text = text
-
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    return btn
-end
-
---========================================================--
---                     TELEPORT LOGIC                     --
---========================================================--
-
-local function teleportTo(pos)
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
-    end
-end
-
---========================================================--
---                         BUTTONS                         --
---========================================================--
-
-local saveABtn = createButton("Save Pos A", 40)
-saveABtn.MouseButton1Click:Connect(function()
-    posA = safeGetPos()
-end)
-
-local saveBBtn = createButton("Save Pos B", 75)
-saveBBtn.MouseButton1Click:Connect(function()
-    posB = safeGetPos()
-end)
-
--- MAIN SINGLE MANUAL TP BUTTON
-local tpBtn = createButton("TP B →", 110)
-local atA = true -- default posisi di A
 
 tpBtn.MouseButton1Click:Connect(function()
-    if atA and posB then
-        teleportTo(posB)
-        tpBtn.Text = "TP A ←"
-        atA = false
-    elseif (not atA) and posA then
-        teleportTo(posA)
-        tpBtn.Text = "TP B →"
-        atA = true
+    if goingToB then
+        if not savedB then status.Text = "Belum save B"; return end
+        teleport(savedB)
+    else
+        if not savedA then status.Text = "Belum save A"; return end
+        teleport(savedA)
     end
+    goingToB = not goingToB
+    tpBtn.Text = goingToB and "TP B (Manual)" or "TP A (Manual)"
 end)
 
--- AUTO TELEPORT
-local autoRunning = false
-local autoBtn = createButton("Start Auto (3h50m)", 145)
+startBtn.MouseButton1Click:Connect(function()
+    if isRunning then
+        isRunning = false
+        startBtn.Text = "Start"
+        status.Text = "Stopped"
+        return
+    end
 
-autoBtn.MouseButton1Click:Connect(function()
-    autoRunning = not autoRunning
-    autoBtn.Text = autoRunning and "Stop Auto" or "Start Auto (3h50m)"
+    local dur = tonumber(input.Text)
+    if not dur or dur <= 0 then status.Text = "Durasi invalid"; return end
+    if not savedA or not savedB then status.Text = "Belum save A/B"; return end
 
-    if autoRunning then
-        task.spawn(function()
-            while autoRunning do
-                if atA and posB then
-                    teleportTo(posB)
-                    tpBtn.Text = "TP A ←"
-                    atA = false
-                elseif (not atA) and posA then
-                    teleportTo(posA)
-                    tpBtn.Text = "TP B →"
-                    atA = true
-                end
+    isRunning = true
+    startBtn.Text = "Stop"
 
-                task.wait(13800) -- 3 jam 50 menit
+    timerThread = task.spawn(function()
+        while isRunning do
+            status.Text = "Next: " .. dur .. "s"
+            for i = dur,1,-1 do
+                if not isRunning then break end
+                status.Text = "Next: "..i.."s"
+                task.wait(1)
             end
-        end)
-    end
+            if not isRunning then break end
+
+            local target = goingToB and savedB or savedA
+            teleport(target)
+            goingToB = not goingToB
+            tpBtn.Text = goingToB and "TP B (Manual)" or "TP A (Manual)"
+        end
+    end)
 end)
+
+-- Simpan posisi otomatis hanya saat manual pertama kali ditekan
+savedA = player.Character.HumanoidRootPart.CFrame
+savedB = player.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,10)
+status.Text = "Siap"
