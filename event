@@ -1,5 +1,5 @@
 --========================================================--
---               TELEPORT A <-> B (COMPACT)              --
+--        TELEPORT A <-> B (Auto + Manual) - CLEAN UI     --
 --========================================================--
 
 local GUI_NAME = "ABTeleporterUI"
@@ -9,183 +9,323 @@ end
 
 local player = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
--- Frame Utama (lebih kecil)
+--========================================================--
+--   POSISI B
+--========================================================--
+local posisiB = CFrame.new(6081, -586, 4703)
+
+--========================================================--
+--   GUI BASE
+--========================================================--
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = GUI_NAME
 gui.ResetOnSpawn = false
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 180, 0, 125)  -- <<< DIPERKECIL
-main.Position = UDim2.new(0.5, -90, 0.5, -62)
-main.BackgroundColor3 = Color3.fromRGB(20,20,20)
-main.BorderSizePixel = 0
+----------------------------------------------------------
+--   DRAG FUNCTION
+----------------------------------------------------------
+local function makeDraggable(object)
+    local dragging = false
+    local dragStart, startPos
+    
+    object.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = object.Position
+        end
+    end)
 
--- Drag
-local UIS = game:GetService("UserInputService")
-local dragging, dragStart, startPos
-main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-    end
-end)
-UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        main.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
-    end
-end)
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-end)
+    object.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
 
--- Title bar (lebih kecil)
-local title = Instance.new("Frame", main)
-title.Size = UDim2.new(1, 0, 0, 22)
-title.BackgroundColor3 = Color3.fromRGB(30,30,30)
-title.BorderSizePixel = 0
-
-local titleText = Instance.new("TextLabel", title)
-titleText.Size = UDim2.new(1, -40, 1, 0)
-titleText.Position = UDim2.new(0,5,0,0)
-titleText.BackgroundTransparency = 1
-titleText.Text = "TP A <-> B"
-titleText.TextColor3 = Color3.fromRGB(255,255,255)
-titleText.TextSize = 14
-titleText.Font = Enum.Font.SourceSansBold
-titleText.TextXAlignment = Enum.TextXAlignment.Left
-
--- minimize dan close (lebih kecil)
-local close = Instance.new("TextButton", title)
-close.Size = UDim2.new(0,20,1,0)
-close.Position = UDim2.new(1,-20,0,0)
-close.BackgroundTransparency = 1
-close.Text = "X"
-close.TextColor3 = Color3.fromRGB(255,100,100)
-close.TextSize = 14
-close.Font = Enum.Font.SourceSansBold
-close.MouseButton1Click:Connect(function() gui:Destroy() end)
-
-local mini = Instance.new("TextButton", title)
-mini.Size = UDim2.new(0,20,1,0)
-mini.Position = UDim2.new(1,-40,0,0)
-mini.BackgroundTransparency = 1
-mini.Text = "_"
-mini.TextColor3 = Color3.fromRGB(180,180,180)
-mini.TextSize = 16
-mini.Font = Enum.Font.SourceSansBold
-
-local minimized = false
-mini.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    TweenService:Create(main, TweenInfo.new(0.25), {
-        Size = minimized and UDim2.new(0,180,0,22) or UDim2.new(0,180,0,125)
-    }):Play()
-end)
-
--- Input waktu (diperkecil)
-local input = Instance.new("TextBox", main)
-input.Size = UDim2.new(1, -10, 0, 22)
-input.Position = UDim2.new(0, 5, 0, 28)
-input.BackgroundColor3 = Color3.fromRGB(40,40,40)
-input.TextColor3 = Color3.fromRGB(255,255,255)
-input.TextSize = 14
-input.Font = Enum.Font.SourceSans
-input.PlaceholderText = "Durasi (detik)"
-input.Text = ""
-
--- Tombol start/stop (lebih kecil)
-local startBtn = Instance.new("TextButton", main)
-startBtn.Size = UDim2.new(1, -10, 0, 22)
-startBtn.Position = UDim2.new(0, 5, 0, 55)
-startBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-startBtn.TextColor3 = Color3.fromRGB(255,255,255)
-startBtn.TextSize = 14
-startBtn.Font = Enum.Font.SourceSansBold
-startBtn.Text = "Start"
-
--- Tombol TP mode (lebih kecil)
-local tpBtn = Instance.new("TextButton", main)
-tpBtn.Size = UDim2.new(1, -10, 0, 22)
-tpBtn.Position = UDim2.new(0, 5, 0, 82)
-tpBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
-tpBtn.TextColor3 = Color3.fromRGB(255,255,255)
-tpBtn.TextSize = 14
-tpBtn.Font = Enum.Font.SourceSansBold
-tpBtn.Text = "TP B (Manual)"
-
--- Status kecil
-local status = Instance.new("TextLabel", main)
-status.Size = UDim2.new(1, -10, 0, 16)
-status.Position = UDim2.new(0, 5, 0, 106)
-status.BackgroundTransparency = 1
-status.TextColor3 = Color3.fromRGB(200,200,200)
-status.TextSize = 12
-status.Font = Enum.Font.SourceSans
-
--- LOGIC
-local savedA, savedB
-local isRunning = false
-local goingToB = true
-local timerThread
-
-local function teleport(pos)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = pos end
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement 
+        or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            object.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
 end
 
-tpBtn.MouseButton1Click:Connect(function()
-    if goingToB then
-        if not savedB then status.Text = "Belum save B"; return end
-        teleport(savedB)
-    else
-        if not savedA then status.Text = "Belum save A"; return end
-        teleport(savedA)
-    end
-    goingToB = not goingToB
-    tpBtn.Text = goingToB and "TP B (Manual)" or "TP A (Manual)"
+
+--(0.6, 0, 1, 0)
+----------------------------------------------------------
+--   MAIN FRAME (COMPACT)
+----------------------------------------------------------
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 210, 0, 135) -- DIPERKECIL
+frame.Position = UDim2.new(0.5, -105, 0.5, -67)
+frame.BackgroundColor3 = Color3.fromRGB(22,22,22)
+frame.BorderSizePixel = 0
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+makeDraggable(frame)
+
+----------------------------------------------------------
+--   HEADER (COMPACT)
+----------------------------------------------------------
+local header = Instance.new("Frame", frame)
+header.Size = UDim2.new(1, 0, 0, 24) -- lebih tipis
+header.BackgroundColor3 = Color3.fromRGB(28,28,28)
+Instance.new("UICorner", header).CornerRadius = UDim.new(0,10)
+
+local headerText = Instance.new("TextLabel", header)
+headerText.Size = UDim2.new(1, -50, 1, 0)
+headerText.Position = UDim2.new(0, 8, 0, 0)
+headerText.BackgroundTransparency = 1
+headerText.Text = "A ↔ B"
+headerText.TextColor3 = Color3.new(1,1,1)
+headerText.TextSize = 14 -- lebih kecil
+headerText.Font = Enum.Font.GothamBold
+headerText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- MINIMIZE
+local mini = Instance.new("TextButton", header)
+mini.Size = UDim2.new(0, 22, 0, 22)
+mini.Position = UDim2.new(1, -46, 0, 1)
+mini.Text = "-"
+mini.TextColor3 = Color3.new(1,1,1)
+mini.BackgroundColor3 = Color3.fromRGB(45,45,45)
+mini.TextSize = 16
+Instance.new("UICorner", mini).CornerRadius = UDim.new(0,8)
+
+-- CLOSE
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.new(0, 22, 0, 22)
+closeBtn.Position = UDim2.new(1, -23, 0, 1)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.BackgroundColor3 = Color3.fromRGB(100,20,20)
+closeBtn.TextSize = 14
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,8)
+
+----------------------------------------------------------
+--   ROW TOP (A LABEL + START BUTTON)
+----------------------------------------------------------
+local rowTop = Instance.new("Frame", frame)
+rowTop.Size = UDim2.new(1, -16, 0, 22)
+rowTop.Position = UDim2.new(0, 8, 0, 32)
+rowTop.BackgroundTransparency = 1
+
+local posLabel = Instance.new("TextLabel", rowTop)
+posLabel.Size = UDim2.new(0.6, 0, 1, 0)
+posLabel.Text = "A: awal"
+posLabel.BackgroundTransparency = 1
+posLabel.TextColor3 = Color3.fromRGB(160,160,160)
+posLabel.TextSize = 11
+posLabel.Font = Enum.Font.Gotham
+posLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local startBtn = Instance.new("TextButton", rowTop)
+startBtn.Size = UDim2.new(0.38, 0, 1, 0)
+startBtn.Position = UDim2.new(0.62, 0, 0, 0)
+startBtn.Text = "Start"
+startBtn.TextColor3 = Color3.new(1,1,1)
+startBtn.BackgroundColor3 = Color3.fromRGB(0,130,60)
+startBtn.TextSize = 12
+startBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 6)
+
+----------------------------------------------------------
+--   TP SWITCH (A <-> B)
+----------------------------------------------------------
+local rowMid = Instance.new("Frame", frame)
+rowMid.Size = UDim2.new(1, -16, 0, 24)
+rowMid.Position = UDim2.new(0, 8, 0, 58)
+rowMid.BackgroundTransparency = 1
+
+local tpSwitch = Instance.new("TextButton", rowMid)
+tpSwitch.Size = UDim2.new(1, 0, 1, 0)
+tpSwitch.Text = "TP B"
+tpSwitch.TextColor3 = Color3.new(1,1,1)
+tpSwitch.BackgroundColor3 = Color3.fromRGB(50,50,50)
+tpSwitch.TextSize = 12
+tpSwitch.Font = Enum.Font.GothamBold
+Instance.new("UICorner", tpSwitch).CornerRadius = UDim.new(0, 6)
+
+----------------------------------------------------------
+--   INPUT (MENIT)
+----------------------------------------------------------
+local input = Instance.new("TextBox", frame)
+input.Size = UDim2.new(1, -16, 0, 24)
+input.Position = UDim2.new(0, 8, 0, 86)
+input.PlaceholderText = "Menit ke B"
+input.TextColor3 = Color3.new(1,1,1)
+input.BackgroundColor3 = Color3.fromRGB(35,35,35)
+input.TextSize = 12
+input.Font = Enum.Font.Gotham
+Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
+
+----------------------------------------------------------
+--   COUNTDOWN LABEL
+----------------------------------------------------------
+local countdown = Instance.new("TextLabel", frame)
+countdown.Size = UDim2.new(1, -16, 0, 16)
+countdown.Position = UDim2.new(0, 8, 0, 113)
+countdown.BackgroundTransparency = 1
+countdown.TextColor3 = Color3.fromRGB(0,255,140)
+countdown.TextSize = 11
+countdown.Font = Enum.Font.GothamBold
+countdown.Text = "Countdown: -"
+countdown.TextXAlignment = Enum.TextXAlignment.Left
+
+--========================================================--
+--   LOGIC
+--========================================================--
+local posA = nil
+local running = false
+
+local function tp(cf)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = cf end
+end
+
+local function isNearB(cf)
+    return (cf.Position - posisiB.Position).Magnitude < 50
+end
+
+-- Auto save A awal
+task.delay(1, function()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then posA = hrp.CFrame end
 end)
 
+-- Auto save A setiap 15 menit
+task.spawn(function()
+    while gui.Parent do
+        task.wait(900)
+        if not running then
+            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and not isNearB(hrp.CFrame) then
+                posA = hrp.CFrame
+                posLabel.Text = "A: " .. os.date("%H:%M")
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------
+--   MANUAL TP SWITCH
+----------------------------------------------------------
+tpSwitch.MouseButton1Click:Connect(function()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    if isNearB(hrp.CFrame) then
+        if posA then tp(posA) end
+        tpSwitch.Text = "TP B"
+    else
+        tp(posisiB)
+        tpSwitch.Text = "TP A"
+    end
+end)
+
+----------------------------------------------------------
+--   COUNTDOWN
+----------------------------------------------------------
+local function format(t)
+    local m = math.floor(t/60)
+    local s = t % 60
+    return string.format("%02d:%02d", m, s)
+end
+
+local function runCountdown(sec, label)
+    local startT = workspace:GetServerTimeNow()
+    while running do
+        local elapsed = workspace:GetServerTimeNow() - startT
+        local remain = math.floor(sec - elapsed)
+
+        if remain <= 0 then
+            countdown.Text = label .. ": 00:00"
+            break
+        end
+
+        countdown.Text = label .. ": " .. format(remain)
+        task.wait(1)
+    end
+end
+
+local loopDelay = (3 * 3600) + (50 * 60)
+
+----------------------------------------------------------
+--   AUTO LOOP
+----------------------------------------------------------
 startBtn.MouseButton1Click:Connect(function()
-    if isRunning then
-        isRunning = false
+    if running then
+        running = false
+        countdown.Text = "Countdown: -"
         startBtn.Text = "Start"
-        status.Text = "Stopped"
+        startBtn.BackgroundColor3 = Color3.fromRGB(0,130,60)
         return
     end
 
-    local dur = tonumber(input.Text)
-    if not dur or dur <= 0 then status.Text = "Durasi invalid"; return end
-    if not savedA or not savedB then status.Text = "Belum save A/B"; return end
+    local menit = tonumber(input.Text)
+    if not menit then
+        countdown.Text = "Isi menit dulu!"
+        return
+    end
 
-    isRunning = true
+    running = true
     startBtn.Text = "Stop"
+    startBtn.BackgroundColor3 = Color3.fromRGB(150,20,20)
 
-    timerThread = task.spawn(function()
-        while isRunning do
-            status.Text = "Next: " .. dur .. "s"
-            for i = dur,1,-1 do
-                if not isRunning then break end
-                status.Text = "Next: "..i.."s"
-                task.wait(1)
-            end
-            if not isRunning then break end
+    task.spawn(function()
+        while running do
 
-            local target = goingToB and savedB or savedA
-            teleport(target)
-            goingToB = not goingToB
-            tpBtn.Text = goingToB and "TP B (Manual)" or "TP A (Manual)"
+            -- Ke B
+            runCountdown(menit * 60, "Ke B")
+            if not running then break end
+            tp(posisiB)
+            countdown.Text = "Tiba di B"
+
+            -- Ke A
+            runCountdown(11 * 60, "Ke A")
+            if not running then break end
+            if posA then tp(posA) end
+            countdown.Text = "Kembali ke A"
+
+            -- LOOP DELAY
+            runCountdown(loopDelay, "Loop berikutnya")
+            if not running then break end
         end
+
+        startBtn.Text = "Start"
+        startBtn.BackgroundColor3 = Color3.fromRGB(0,130,60)
+        countdown.Text = "Countdown: -"
+        running = false
     end)
 end)
 
--- Simpan posisi otomatis hanya saat manual pertama kali ditekan
-savedA = player.Character.HumanoidRootPart.CFrame
-savedB = player.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,10)
-status.Text = "Siap"
+--========================================================--
+--   MINIMIZE / MAXIMIZE
+--========================================================--
+mini.MouseButton1Click:Connect(function()
+    bubble.Position = frame.Position
+    frame.Visible = false
+    bubble.Visible = true
+end)
+
+bubble.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    bubble.Visible = false
+end)
+
+--========================================================--
+--   CLOSE BUTTON → MATIKAN SEMUA
+--========================================================--
+closeBtn.MouseButton1Click:Connect(function()
+    running = false
+    gui:Destroy()
+end)
