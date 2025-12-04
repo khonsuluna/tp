@@ -180,7 +180,7 @@ countdown.TextXAlignment = Enum.TextXAlignment.Left
 local posA
 local running = false
 
-local triggerHours = { [3]=true,[7]=true,[11]=true,[15]=true,[19]=true,[23]=true }
+local triggerHours = { [4]=true,[8]=true,[12]=true,[16]=true,[20]=true,[24]=true }
 local lastTriggeredHour = nil
 
 local function tp(cf)
